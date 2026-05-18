@@ -3,6 +3,7 @@ import { UserWarning } from './UserWarning';
 import { USER_ID, getTodos, addTodo, deleteTodo } from './api/todos';
 import { Todo } from './types/Todo';
 import { FilterStatus } from './types/FilterStatus';
+import { ErrorMessage } from './types/ErrorMessage';
 import { Header } from './Header/Header';
 import { TodoList } from './TodoList/TodoList';
 import { Footer } from './Footer/Footer';
@@ -11,7 +12,9 @@ import { ErrorNotification } from './ErrorNotification/ErrorNotification';
 
 export const App: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState<ErrorMessage>(
+    ErrorMessage.None,
+  );
   const [filter, setFilter] = useState(FilterStatus.All);
   const [newTodoTitle, setNewTodoTitle] = useState('');
   const [tempTodo, setTempTodo] = useState<Todo | null>(null);
@@ -32,12 +35,12 @@ export const App: React.FC = () => {
   useEffect(() => {
     getTodos()
       .then(setTodos)
-      .catch(() => setErrorMessage('Unable to load todos'));
+      .catch(() => setErrorMessage(ErrorMessage.Load));
   }, []);
 
   useEffect(() => {
     if (errorMessage) {
-      const timer = setTimeout(() => setErrorMessage(''), 3000);
+      const timer = setTimeout(() => setErrorMessage(ErrorMessage.None), 3000);
 
       return () => clearTimeout(timer);
     }
@@ -51,7 +54,7 @@ export const App: React.FC = () => {
     const trimmedTitle = newTodoTitle.trim();
 
     if (!trimmedTitle) {
-      setErrorMessage('Title should not be empty');
+      setErrorMessage(ErrorMessage.EmptyTitle);
 
       return;
     }
@@ -73,7 +76,7 @@ export const App: React.FC = () => {
       setTodos(current => [...current, createdTodo]);
       setNewTodoTitle('');
     } catch {
-      setErrorMessage('Unable to add a todo');
+      setErrorMessage(ErrorMessage.Add);
     } finally {
       setTempTodo(null);
     }
@@ -86,7 +89,7 @@ export const App: React.FC = () => {
       await deleteTodo(todoId);
       setTodos(current => current.filter(todo => todo.id !== todoId));
     } catch {
-      setErrorMessage('Unable to delete a todo');
+      setErrorMessage(ErrorMessage.Delete);
     } finally {
       setLoadingTodoIds(current => current.filter(id => id !== todoId));
     }
@@ -135,7 +138,7 @@ export const App: React.FC = () => {
 
       <ErrorNotification
         errorMessage={errorMessage}
-        onClose={() => setErrorMessage('')}
+        onClose={() => setErrorMessage(ErrorMessage.None)}
       />
     </div>
   );
